@@ -4,7 +4,7 @@ const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 if (!TMDB_API_KEY) {
-  throw new Error('TMDB API key is not set in environment variables');
+  console.error('TMDB API key is not set in environment variables');
 }
 
 const api = axios.create({
@@ -13,6 +13,17 @@ const api = axios.create({
     api_key: TMDB_API_KEY,
   },
 });
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error('TMDB API authentication failed. Please check your API key.');
+    }
+    return Promise.reject(error);
+  }
+);
 
 interface MovieResponse {
   page: number;
@@ -34,11 +45,11 @@ interface Movie {
 
 export const getPopularMovies = async (page = 1): Promise<MovieResponse> => {
   try {
+    if (!TMDB_API_KEY) {
+      throw new Error('TMDB API key is not configured');
+    }
     const response = await api.get<MovieResponse>('/movie/popular', {
-      params: { 
-        page,
-        api_key: TMDB_API_KEY 
-      },
+      params: { page }
     });
     return response.data;
   } catch (error) {
@@ -49,12 +60,11 @@ export const getPopularMovies = async (page = 1): Promise<MovieResponse> => {
 
 export const searchMovies = async (query: string, page = 1): Promise<MovieResponse> => {
   try {
+    if (!TMDB_API_KEY) {
+      throw new Error('TMDB API key is not configured');
+    }
     const response = await api.get<MovieResponse>('/search/movie', {
-      params: { 
-        query, 
-        page,
-        api_key: TMDB_API_KEY 
-      },
+      params: { query, page }
     });
     return response.data;
   } catch (error) {
@@ -65,11 +75,10 @@ export const searchMovies = async (query: string, page = 1): Promise<MovieRespon
 
 export const getMovieDetails = async (id: string): Promise<Movie> => {
   try {
-    const response = await api.get<Movie>(`/movie/${id}`, {
-      params: { 
-        api_key: TMDB_API_KEY 
-      },
-    });
+    if (!TMDB_API_KEY) {
+      throw new Error('TMDB API key is not configured');
+    }
+    const response = await api.get<Movie>(`/movie/${id}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching movie details:', error);
@@ -79,11 +88,10 @@ export const getMovieDetails = async (id: string): Promise<Movie> => {
 
 export const getMovieCredits = async (id: string) => {
   try {
-    const response = await api.get(`/movie/${id}/credits`, {
-      params: { 
-        api_key: TMDB_API_KEY 
-      },
-    });
+    if (!TMDB_API_KEY) {
+      throw new Error('TMDB API key is not configured');
+    }
+    const response = await api.get(`/movie/${id}/credits`);
     return response.data;
   } catch (error) {
     console.error('Error fetching movie credits:', error);
@@ -93,11 +101,10 @@ export const getMovieCredits = async (id: string) => {
 
 export const getMovieReviews = async (id: string) => {
   try {
-    const response = await api.get(`/movie/${id}/reviews`, {
-      params: { 
-        api_key: TMDB_API_KEY 
-      },
-    });
+    if (!TMDB_API_KEY) {
+      throw new Error('TMDB API key is not configured');
+    }
+    const response = await api.get(`/movie/${id}/reviews`);
     return response.data;
   } catch (error) {
     console.error('Error fetching movie reviews:', error);
