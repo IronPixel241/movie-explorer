@@ -42,7 +42,6 @@ export const getMovieReviews = async (id: string, page = 1) => {
   return response.data;
 };
 
-export const getMovieImageUrl = (path: string, size: 'w500' | 'original' = 'w500'): string => {
-  if (!path) return 'https://via.placeholder.com/500x750?text=No+Image';
+export const getMovieImageUrl = (path: string, size: 'w500' | 'original' = 'w500') => {
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }; 
