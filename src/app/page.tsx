@@ -34,6 +34,7 @@ export default function Home() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
   } = useInfiniteQuery({
     queryKey: ['movies', debouncedSearch],
     queryFn: ({ pageParam = 1 }) =>
@@ -62,6 +63,17 @@ export default function Home() {
     );
   }
 
+  if (isError) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
+          <p className="mt-2 text-gray-600">Please try again later</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -78,8 +90,8 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {data?.pages.map((page) =>
-            page.results.map((movie) => (
+          {data?.pages?.map((page) =>
+            page?.results?.map((movie) => (
               <MovieCard
                 key={movie.id}
                 movie={movie}
