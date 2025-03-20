@@ -1,32 +1,44 @@
 import axios from 'axios';
-import { Movie, MovieResponse, MovieDetails } from '@/types/movie';
 
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-
-const tmdbApi = axios.create({
-  baseURL: TMDB_BASE_URL,
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_TMDB_API_URL,
   params: {
-    api_key: TMDB_API_KEY,
+    api_key: process.env.NEXT_PUBLIC_TMDB_API_KEY,
   },
 });
 
-export const getPopularMovies = async (page: number = 1): Promise<MovieResponse> => {
-  const response = await tmdbApi.get('/movie/popular', {
+export const getPopularMovies = async (page = 1) => {
+  const response = await api.get('/movie/popular', {
     params: { page },
   });
   return response.data;
 };
 
-export const searchMovies = async (query: string, page: number = 1): Promise<MovieResponse> => {
-  const response = await tmdbApi.get('/search/movie', {
+export const searchMovies = async (query: string, page = 1) => {
+  const response = await api.get('/search/movie', {
     params: { query, page },
   });
   return response.data;
 };
 
-export const getMovieDetails = async (movieId: number): Promise<MovieDetails> => {
-  const response = await tmdbApi.get(`/movie/${movieId}`);
+export const getMovieDetails = async (id: string, page = 1) => {
+  const response = await api.get(`/movie/${id}`, {
+    params: { page },
+  });
+  return response.data;
+};
+
+export const getMovieCredits = async (id: string, page = 1) => {
+  const response = await api.get(`/movie/${id}/credits`, {
+    params: { page },
+  });
+  return response.data;
+};
+
+export const getMovieReviews = async (id: string, page = 1) => {
+  const response = await api.get(`/movie/${id}/reviews`, {
+    params: { page },
+  });
   return response.data;
 };
 

@@ -1,55 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getMovieDetails, getMovieImageUrl } from '@/services/tmdb';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { getMovieDetails, getMovieCredits, getMovieReviews } from '@/services/tmdb';
 import Layout from '@/components/Layout';
-import { StarIcon } from '@heroicons/react/20/solid';
+import Image from 'next/image';
 
-export default function MovieDetail({ params }: { params: { id: string } }) {
-  const { data: session, status } = useSession();
+interface MovieDetails {
+  id: number;
+  title: string;
+  overview: string;
+  poster_path: string;
+  backdrop_path: string;
+  release_date: string;
+  vote_average: number;
+  genres: Array<{ id: number; name: string }>;
+}
+
+interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+}
+
+interface Review {
+  id: string;
+  author: string;
+  content: string;
+  rating: number;
+  created_at: string;
+}
+
+export default function MoviePage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [movie, setMovie] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
+    const favorites = localStorage.getItem('favorites');
+    if (favorites) {
+      setFavoriteIds(JSON.parse(favorites));
     }
-  }, [status, router]);
+  }, []);
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const data = await getMovieDetails(parseInt(params.id));
-        setMovie(data);
-      } catch (error) {
-        console.error('Error fetching movie:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: movieData, isLoading: isLoadingMovie } = useInfiniteQuery({
+    queryKey: ['movie', params.id],
+    queryFn: ({ pageParam = 1 }) => getMovieDetails(params.id, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
+  });
 
-    fetchMovie();
-  }, [params.id]);
+  const { data: creditsData, isLoading: isLoadingCredits } = useInfiniteQuery({
+    queryKey: ['movieCredits', params.id],
+    queryFn: ({ pageParam = 1 }) => getMovieCredits(params.id, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
+  });
 
-  useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setIsFavorite(favorites.includes(parseInt(params.id)));
-  }, [params.id]);
+  const { data: reviewsData, isLoading: isLoadingReviews } = useInfiniteQuery({
+    queryKey: ['movieReviews', params.id],
+    queryFn: ({ pageParam = 1 }) => getMovieReviews(params.id, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
+  });
 
-  const handleFavoriteToggle = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    const newFavorites = isFavorite
-      ? favorites.filter((id: number) => id !== parseInt(params.id))
-      : [...favorites, parseInt(params.id)];
+  const handleFavoriteToggle = (movieId: number) => {
+    const newFavorites = favoriteIds.includes(movieId)
+      ? favoriteIds.filter((id) => id !== movieId)
+      : [...favoriteIds, movieId];
+    setFavoriteIds(newFavorites);
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
-    setIsFavorite(!isFavorite);
   };
 
-  if (loading) {
+  if (isLoadingMovie || isLoadingCredits || isLoadingReviews) {
     return (
       <Layout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -59,49 +83,70 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!movie) {
-    return (
-      <Layout>
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-gray-900">Movie not found</h1>
-        </div>
-      </Layout>
-    );
-  }
+  const movie = movieData?.pages[0].results as MovieDetails;
+  const credits = creditsData?.pages[0].results as { cast: CastMember[] };
+  const reviews = reviewsData?.pages[0].results as Review[];
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="relative h-[500px]">
-            <img
-              src={getMovieImageUrl(movie.poster_path, 'original')}
-              alt={movie.title}
-              className="rounded-lg object-cover w-full h-full"
-            />
+      <div className="space-y-8">
+        <div className="relative h-[400px] w-full">
+          <Image
+            src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
+            alt={movie.title}
+            fill
+            className="object-cover rounded-lg"
+            priority
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg"></div>
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <h1 className="text-4xl font-bold">{movie.title}</h1>
+            <p className="mt-2 text-lg">{movie.overview}</p>
+            <div className="mt-4 flex items-center space-x-4">
+              <span>Release Date: {new Date(movie.release_date).toLocaleDateString()}</span>
+              <span>Rating: {movie.vote_average.toFixed(1)}/10</span>
+            </div>
           </div>
-          <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-gray-900">{movie.title}</h1>
-            <div className="flex items-center space-x-2">
-              <StarIcon className="h-5 w-5 text-yellow-400" />
-              <span className="text-lg text-gray-600">{movie.vote_average.toFixed(1)}</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <h2 className="text-2xl font-bold mb-4">Cast</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {credits?.cast.slice(0, 8).map((cast) => (
+                <div key={cast.id} className="text-center">
+                  <div className="relative h-48 w-32 mx-auto">
+                    <Image
+                      src={
+                        cast.profile_path
+                          ? `https://image.tmdb.org/t/p/w200${cast.profile_path}`
+                          : '/placeholder.png'
+                      }
+                      alt={cast.name}
+                      fill
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
+                  <p className="mt-2 font-medium">{cast.name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{cast.character}</p>
+                </div>
+              ))}
             </div>
-            <p className="text-gray-600">{movie.overview}</p>
-            <div className="space-y-2">
-              <p><span className="font-semibold">Release Date:</span> {movie.release_date}</p>
-              <p><span className="font-semibold">Runtime:</span> {movie.runtime} minutes</p>
-              <p><span className="font-semibold">Genres:</span> {movie.genres.map((genre: any) => genre.name).join(', ')}</p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+            <div className="space-y-4">
+              {reviews?.slice(0, 3).map((review) => (
+                <div key={review.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-medium">{review.author}</p>
+                    <span className="text-yellow-500">★ {review.rating}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{review.content}</p>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={handleFavoriteToggle}
-              className={`w-full py-2 px-4 rounded-md text-sm font-medium ${
-                isFavorite
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-              }`}
-            >
-              {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
-            </button>
           </div>
         </div>
       </div>

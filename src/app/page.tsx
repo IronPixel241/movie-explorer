@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getPopularMovies, searchMovies } from '@/services/tmdb';
@@ -9,17 +8,10 @@ import MovieCard from '@/components/MovieCard';
 import Layout from '@/components/Layout';
 
 export default function Home() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
-    }
-  }, [status, router]);
 
   useEffect(() => {
     const favorites = localStorage.getItem('favorites');
@@ -60,7 +52,7 @@ export default function Home() {
     localStorage.setItem('favorites', JSON.stringify(newFavorites));
   };
 
-  if (status === 'loading' || isLoading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex justify-center items-center min-h-[60vh]">
