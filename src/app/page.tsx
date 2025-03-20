@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getPopularMovies, searchMovies } from '@/services/tmdb';
 import MovieCard from '@/components/MovieCard';
