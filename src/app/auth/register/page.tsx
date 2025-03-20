@@ -42,8 +42,8 @@ export default function Register() {
 
       // Registration successful, redirect to sign in
       router.push('/auth/signin?registered=true');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred during registration');
     } finally {
       setLoading(false);
     }

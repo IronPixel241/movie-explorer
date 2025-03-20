@@ -33,7 +33,7 @@ export default function SignIn() {
       } else {
         router.push('/');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during sign in');
     } finally {
       setLoading(false);
