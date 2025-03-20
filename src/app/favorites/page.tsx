@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import { getMovieDetails } from '@/services/tmdb';
 import MovieCard from '@/components/MovieCard';
 import Layout from '@/components/Layout';
+import { Movie } from '@/types/movie';
 
 export default function FavoritesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [favoriteMovies, setFavoriteMovies] = useState<any[]>([]);
+  const [favoriteMovies, setFavoriteMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
 
@@ -31,7 +32,7 @@ export default function FavoritesPage() {
         const movies = await Promise.all(
           favoriteIds.map((id) => getMovieDetails(id))
         );
-        setFavoriteMovies(movies);
+        setFavoriteMovies(movies.filter((movie): movie is Movie => movie !== null));
       } catch (error) {
         console.error('Error fetching favorite movies:', error);
       } finally {

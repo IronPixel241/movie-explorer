@@ -38,10 +38,10 @@ export default function MovieCard({ movie, onFavoriteToggle, isFavorite }: Movie
           <div className="mt-2 flex items-center">
             <StarIcon className="h-5 w-5 text-yellow-400" />
             <span className="ml-1 text-sm text-gray-600">
-              {movie.vote_average.toFixed(1)}
+              {movie.vote_average?.toFixed(1) || 'N/A'}
             </span>
           </div>
-          <p className="mt-2 text-sm text-gray-500 line-clamp-2">{movie.overview}</p>
+          <p className="mt-2 text-sm text-gray-500 line-clamp-2">{movie.overview || 'No description available'}</p>
           {onFavoriteToggle && (
             <button
               onClick={handleFavoriteClick}
