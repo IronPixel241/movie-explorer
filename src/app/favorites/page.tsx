@@ -9,7 +9,7 @@ import Layout from '@/components/Layout';
 import { Movie } from '@/types/movie';
 
 export default function FavoritesPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [favoriteMovies, setFavoriteMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +70,7 @@ export default function FavoritesPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Favorite Movies</h1>
         {favoriteMovies.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-lg text-gray-600">You haven't added any movies to your favorites yet.</p>
+            <p className="text-lg text-gray-600">You haven&apos;t added any movies to your favorites yet.</p>
             <button
               onClick={() => router.push('/')}
               className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"

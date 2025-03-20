@@ -8,7 +8,6 @@ import MovieCard from '@/components/MovieCard';
 import Layout from '@/components/Layout';
 
 export default function Home() {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);

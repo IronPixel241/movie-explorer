@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { getMovieDetails, getMovieImageUrl } from '@/services/tmdb';
 import Layout from '@/components/Layout';
 import { StarIcon } from '@heroicons/react/20/solid';
@@ -24,7 +23,6 @@ interface MovieDetails {
 }
 
 export default function MovieDetail({ params }: { params: { id: string } }) {
-  const router = useRouter();
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
