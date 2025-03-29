@@ -16,6 +16,8 @@
     "@types/bcryptjs": "^3.0.0",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
+    "mongodb": "^6.15.0",
+    "mongoose": "^8.13.1",
     "movie-explorer": "file:",
     "next": "15.2.3",
     "next-auth": "^4.24.11",

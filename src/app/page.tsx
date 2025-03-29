@@ -5,18 +5,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { getPopularMovies, searchMovies } from '@/services/tmdb';
 import MovieCard from '@/components/MovieCard';
 import Layout from '@/components/Layout';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-
-  useEffect(() => {
-    const favorites = localStorage.getItem('favorites');
-    if (favorites) {
-      setFavoriteIds(JSON.parse(favorites));
-    }
-  }, []);
+  const { favorites, addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -43,12 +37,12 @@ export default function Home() {
       lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined,
   });
 
-  const handleFavoriteToggle = (movieId: number) => {
-    const newFavorites = favoriteIds.includes(movieId)
-      ? favoriteIds.filter((id) => id !== movieId)
-      : [...favoriteIds, movieId];
-    setFavoriteIds(newFavorites);
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+  const handleFavoriteToggle = async (movieId: number) => {
+    if (isFavorite(movieId)) {
+      await removeFromFavorites(movieId);
+    } else {
+      await addToFavorites(movieId);
+    }
   };
 
   if (isLoading) {
@@ -94,7 +88,7 @@ export default function Home() {
                 key={movie.id}
                 movie={movie}
                 onFavoriteToggle={handleFavoriteToggle}
-                isFavorite={favoriteIds.includes(movie.id)}
+                isFavorite={isFavorite(movie.id)}
               />
             ))
           )}

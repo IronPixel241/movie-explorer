@@ -5,6 +5,7 @@ import { getMovieDetails, getMovieImageUrl } from '@/services/tmdb';
 import Layout from '@/components/Layout';
 import { StarIcon } from '@heroicons/react/20/solid';
 import Image from 'next/image';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
 interface Genre {
   id: number;
@@ -25,12 +26,13 @@ interface MovieDetails {
 export default function MovieDetail({ params }: { params: { id: string } }) {
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
+  const movieId = parseInt(params.id);
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const data = await getMovieDetails(parseInt(params.id));
+        const data = await getMovieDetails(movieId);
         setMovie(data);
       } catch (error) {
         console.error('Error fetching movie:', error);
@@ -40,20 +42,14 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
     };
 
     fetchMovie();
-  }, [params.id]);
+  }, [movieId]);
 
-  useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setIsFavorite(favorites.includes(parseInt(params.id)));
-  }, [params.id]);
-
-  const handleFavoriteToggle = () => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    const newFavorites = isFavorite
-      ? favorites.filter((id: number) => id !== parseInt(params.id))
-      : [...favorites, parseInt(params.id)];
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
-    setIsFavorite(!isFavorite);
+  const handleFavoriteToggle = async () => {
+    if (isFavorite(movieId)) {
+      await removeFromFavorites(movieId);
+    } else {
+      await addToFavorites(movieId);
+    }
   };
 
   if (loading) {
@@ -104,12 +100,12 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
             <button
               onClick={handleFavoriteToggle}
               className={`w-full py-2 px-4 rounded-md text-sm font-medium ${
-                isFavorite
+                isFavorite(movieId)
                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
                   : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
               }`}
             >
-              {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+              {isFavorite(movieId) ? 'Remove from Favorites' : 'Add to Favorites'}
             </button>
           </div>
         </div>

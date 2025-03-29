@@ -7,13 +7,14 @@ import { getMovieDetails } from '@/services/tmdb';
 import MovieCard from '@/components/MovieCard';
 import Layout from '@/components/Layout';
 import { Movie } from '@/types/movie';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
 export default function FavoritesPage() {
   const { status } = useSession();
   const router = useRouter();
   const [favoriteMovies, setFavoriteMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+  const { favorites, removeFromFavorites, isLoading: favoritesLoading } = useFavorites();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -22,15 +23,10 @@ export default function FavoritesPage() {
   }, [status, router]);
 
   useEffect(() => {
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    setFavoriteIds(favorites);
-  }, []);
-
-  useEffect(() => {
     const fetchFavoriteMovies = async () => {
       try {
         const movies = await Promise.all(
-          favoriteIds.map((id) => getMovieDetails(id))
+          favorites.map((id) => getMovieDetails(id))
         );
         setFavoriteMovies(movies.filter((movie): movie is Movie => movie !== null));
       } catch (error) {
@@ -40,21 +36,21 @@ export default function FavoritesPage() {
       }
     };
 
-    if (favoriteIds.length > 0) {
-      fetchFavoriteMovies();
-    } else {
-      setLoading(false);
+    if (!favoritesLoading) {
+      if (favorites.length > 0) {
+        fetchFavoriteMovies();
+      } else {
+        setLoading(false);
+      }
     }
-  }, [favoriteIds]);
+  }, [favorites, favoritesLoading]);
 
-  const handleFavoriteToggle = (movieId: number) => {
-    const newFavorites = favoriteIds.filter((id) => id !== movieId);
-    setFavoriteIds(newFavorites);
-    localStorage.setItem('favorites', JSON.stringify(newFavorites));
+  const handleFavoriteToggle = async (movieId: number) => {
+    await removeFromFavorites(movieId);
     setFavoriteMovies(favoriteMovies.filter((movie) => movie.id !== movieId));
   };
 
-  if (loading) {
+  if (loading || favoritesLoading) {
     return (
       <Layout>
         <div className="flex justify-center items-center min-h-[60vh]">

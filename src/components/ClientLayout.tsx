@@ -3,6 +3,7 @@
 import AuthProvider from "@/app/providers/AuthProvider";
 import QueryProvider from "@/app/providers/QueryProvider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import Navbar from "./Navbar";
 
 export default function ClientLayout({
@@ -14,12 +15,14 @@ export default function ClientLayout({
     <AuthProvider>
       <QueryProvider>
         <ThemeProvider>
-          <div className="min-h-screen bg-white dark:bg-gray-900">
-            <Navbar />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              {children}
-            </main>
-          </div>
+          <FavoritesProvider>
+            <div className="min-h-screen bg-white dark:bg-gray-900">
+              <Navbar />
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {children}
+              </main>
+            </div>
+          </FavoritesProvider>
         </ThemeProvider>
       </QueryProvider>
     </AuthProvider>

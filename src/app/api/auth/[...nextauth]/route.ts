@@ -1,7 +1,8 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import dbConnect from '@/lib/mongodb';
+import User from '@/models/User';
 
 const handler = NextAuth({
   providers: [
@@ -16,27 +17,41 @@ const handler = NextAuth({
           throw new Error('Please enter an email and password');
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user) {
-          throw new Error('No user found with this email');
+        try {
+          await dbConnect();
+        } catch (error) {
+          console.error('MongoDB connection error:', error);
+          throw new Error('Database connection error. Please try again later.');
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        try {
+          const user = await User.findOne({ email: credentials.email });
 
-        if (!isPasswordValid) {
-          throw new Error('Invalid password');
+          if (!user) {
+            throw new Error('No user found with this email');
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            throw new Error('Invalid password');
+          }
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          if (error instanceof Error && error.message) {
+            throw error;
+          }
+          console.error('Authentication error:', error);
+          throw new Error('Authentication failed. Please try again.');
         }
-
-        return {
-          id: user.id,
-          email: user.email,
-        };
       }
     })
   ],
@@ -50,6 +65,7 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.name = user.name;
       }
       return token;
     },
